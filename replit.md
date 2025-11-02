@@ -8,6 +8,11 @@
 **Current State:** Fully functional MVP with real-time smile detection and automatic photo capture.
 
 ## Recent Changes
+- **2025-11-02:** Added countdown timer feature
+  - Implemented 3-2-1 countdown before photo capture
+  - Large centered countdown display for better user experience
+  - Updated cooldown timing to accommodate countdown sequence
+  
 - **2025-11-02:** Initial project creation
   - Implemented real-time webcam access using OpenCV
   - Added face detection using Haar Cascade Classifiers
@@ -21,7 +26,8 @@
 ✅ **Real-time webcam access** - Live video feed from your camera
 ✅ **Face detection** - Automatically detects faces using Haar Cascades
 ✅ **Smile detection** - Identifies smiles within detected faces
-✅ **Auto photo capture** - Saves photos automatically when you smile
+✅ **Countdown timer** - 3-2-1 countdown appears before photo capture
+✅ **Auto photo capture** - Saves photos automatically after countdown
 ✅ **Visual feedback** - Green rectangles around faces, blue around smiles
 ✅ **On-screen notifications** - "Smile detected!" message appears after capture
 ✅ **Smart cooldown system** - Prevents multiple captures of the same smile
@@ -41,9 +47,11 @@
 ## How to Use
 1. **Run the application:** Click the "Run" button or execute `python capture_smile.py`
 2. **Position yourself:** Sit in front of your webcam
-3. **Smile!** The app will automatically capture a photo when it detects your smile
-4. **Exit:** Press 'q' on your keyboard to quit the application
-5. **View photos:** Check the `captured_smiles` folder for your captured images
+3. **Smile!** The app will detect your smile and start a countdown
+4. **Hold your smile:** A large 3-2-1 countdown will appear on screen
+5. **Photo captured!** After the countdown, your photo is automatically saved
+6. **Exit:** Press 'q' on your keyboard to quit the application
+7. **View photos:** Check the `captured_smiles` folder for your captured images
 
 ## Technical Details
 
@@ -68,7 +76,9 @@ These classifiers come bundled with OpenCV and use machine learning to identify 
    - Detects faces in the frame
    - For each face, searches for smiles
    - Draws rectangles around detected features
-   - Captures photo if smile is detected (with cooldown)
+   - When smile detected, starts 3-2-1 countdown
+   - Displays large countdown numbers on screen
+   - Captures photo after countdown completes
    - Displays the processed frame
 4. **Photo Saving:** Saves images with sequential numbering
 5. **Cleanup:** Releases camera and closes windows on exit
@@ -76,7 +86,8 @@ These classifiers come bundled with OpenCV and use machine learning to identify 
 ### Key Parameters
 - **Face Detection:** `scaleFactor=1.3`, `minNeighbors=5`
 - **Smile Detection:** `scaleFactor=1.8`, `minNeighbors=20` (stricter for accuracy)
-- **Smile Cooldown:** 60 frames (~2 seconds) to prevent duplicate captures
+- **Countdown Duration:** 30 frames per number (~1 second each for 3, 2, 1)
+- **Smile Cooldown:** 90 frames (~3 seconds) to prevent duplicate captures
 - **Message Duration:** 30 frames (~1 second) for "Smile detected!" notification
 
 ## Code Structure
@@ -85,6 +96,7 @@ The code follows a beginner-friendly modular approach:
 - `load_classifiers()` - Loads Haar Cascade models
 - `detect_faces_and_smiles()` - Performs the actual detection
 - `save_photo()` - Handles photo saving with sequential naming
+- `display_countdown()` - Shows large countdown numbers (3, 2, 1)
 - `display_message()` - Shows on-screen notifications
 - `main()` - Orchestrates the entire application flow
 

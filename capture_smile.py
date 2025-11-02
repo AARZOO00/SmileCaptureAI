@@ -116,6 +116,35 @@ def save_photo(frame, photo_counter):
     return photo_counter + 1
 
 
+def display_countdown(frame, countdown_value):
+    """
+    Display a large countdown number on the frame (3, 2, 1).
+    
+    Args:
+        frame: The video frame to draw on
+        countdown_value: The countdown number to display (3, 2, or 1)
+    """
+    if countdown_value > 0:
+        # Get frame dimensions
+        height, width = frame.shape[:2]
+        
+        # Set text properties for large countdown
+        font = cv2.FONT_HERSHEY_SIMPLEX
+        font_scale = 5.0  # Very large font for countdown
+        color = (0, 255, 0)  # Green color
+        thickness = 10
+        
+        # Get text size to center it
+        text = str(countdown_value)
+        text_size = cv2.getTextSize(text, font, font_scale, thickness)[0]
+        text_x = (width - text_size[0]) // 2
+        text_y = (height + text_size[1]) // 2
+        
+        # Draw countdown with black outline for better visibility
+        cv2.putText(frame, text, (text_x, text_y), font, font_scale, (0, 0, 0), thickness + 4)
+        cv2.putText(frame, text, (text_x, text_y), font, font_scale, color, thickness)
+
+
 def display_message(frame, message, duration_counter, max_duration=30):
     """
     Display a message on the frame for a certain duration.
@@ -162,7 +191,8 @@ def main():
     print("=" * 60)
     print("\nInstructions:")
     print("- The camera will start automatically")
-    print("- Smile at the camera to capture a photo!")
+    print("- Smile at the camera to trigger a countdown!")
+    print("- A 3-2-1 countdown will appear before capturing")
     print("- Press 'q' to quit the application")
     print("- Photos will be saved in the 'captured_smiles' folder")
     print("=" * 60)
@@ -183,6 +213,9 @@ def main():
     photo_counter = 1
     message_duration = 0
     smile_cooldown = 0  # Cooldown to prevent multiple captures of the same smile
+    countdown_timer = 0  # Countdown value (3, 2, 1, or 0 when not counting)
+    countdown_frames = 0  # Frame counter for countdown timing
+    capture_next_frame = False  # Flag to capture photo on next frame (after countdown)
     
     print("Starting live camera feed... Press 'q' to quit.\n")
     
@@ -196,26 +229,54 @@ def main():
             print("Error: Failed to read frame from camera!")
             break
         
-        # Detect faces and smiles in the current frame
-        faces, smile_detected = detect_faces_and_smiles(frame, face_cascade, smile_cascade)
-        
-        # If a smile is detected and cooldown has expired
-        if smile_detected and smile_cooldown == 0:
-            # Save the photo
+        # If we need to capture a photo this frame (after countdown completed)
+        if capture_next_frame:
+            # Capture the photo (frame is clean, no countdown overlay)
             photo_counter = save_photo(frame, photo_counter)
             
             # Set message display duration (30 frames ≈ 1 second at 30fps)
             message_duration = 30
             
-            # Set cooldown to prevent multiple captures (60 frames ≈ 2 seconds)
-            smile_cooldown = 60
+            # Set cooldown to prevent multiple captures (90 frames ≈ 3 seconds)
+            smile_cooldown = 90
+            
+            # Reset the capture flag
+            capture_next_frame = False
+        
+        # Detect faces and smiles in the current frame
+        faces, smile_detected = detect_faces_and_smiles(frame, face_cascade, smile_cascade)
+        
+        # If a smile is detected and cooldown has expired and no countdown is active
+        if smile_detected and smile_cooldown == 0 and countdown_timer == 0:
+            # Start the countdown at 3
+            countdown_timer = 3
+            countdown_frames = 0
+            print("Smile detected! Starting countdown...")
+        
+        # Handle countdown logic
+        if countdown_timer > 0:
+            # Display the current countdown number
+            display_countdown(frame, countdown_timer)
+            
+            # Increment frame counter
+            countdown_frames += 1
+            
+            # Change countdown number every 30 frames (≈ 1 second at 30fps)
+            if countdown_frames >= 30:
+                countdown_timer -= 1
+                countdown_frames = 0
+                
+                # If countdown finished, set flag to capture on NEXT frame
+                if countdown_timer == 0:
+                    capture_next_frame = True
         
         # Decrease cooldown counter
         if smile_cooldown > 0:
             smile_cooldown -= 1
         
-        # Display "Smile detected!" message if active
-        message_duration = display_message(frame, "Smile detected!", message_duration)
+        # Display "Smile detected!" message if active (only when not counting down)
+        if countdown_timer == 0:
+            message_duration = display_message(frame, "Smile detected!", message_duration)
         
         # Add instructions text at the bottom of the frame
         cv2.putText(frame, "Press 'q' to quit", (10, frame.shape[0] - 10),
