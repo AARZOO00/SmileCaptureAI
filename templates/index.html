@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>SmileCaptureAI</title>
+    <meta charset="UTF-8">
+    <style>
+        body { 
+            font-family: Arial, sans-serif; 
+            text-align: center; 
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            margin: 0;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: rgba(255,255,255,0.1);
+            padding: 30px;
+            border-radius: 15px;
+            backdrop-filter: blur(10px);
+        }
+        button { 
+            padding: 15px 30px; 
+            font-size: 18px; 
+            background: #4CAF50; 
+            color: white; 
+            border: none; 
+            cursor: pointer; 
+            border-radius: 25px;
+            margin: 20px;
+            transition: all 0.3s;
+        }
+        button:hover { 
+            background: #45a049;
+            transform: scale(1.05);
+        }
+        #status { 
+            font-size: 20px; 
+            margin: 15px;
+            font-weight: bold;
+        }
+        .gallery img { 
+            width: 150px; 
+            height: 150px; 
+            object-fit: cover; 
+            border-radius: 10px; 
+            border: 3px solid white;
+            margin: 10px;
+        }
+        .video-container {
+            border: 3px solid white;
+            border-radius: 10px;
+            display: inline-block;
+            overflow: hidden;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>😊 SmileCaptureAI Web</h1>
+        <p>Real-time face and smile detection in your browser!</p>
+        
+        <!-- Live Video Feed -->
+        <div class="video-container">
+            <img src="{{ url_for('video_feed') }}" width="640" height="480" alt="Live Camera">
+        </div>
+        
+        <br>
+        <button onclick="capturePhoto()">📸 CAPTURE PHOTO</button>
+        
+        <div id="status">🚀 Ready! Click the button to capture photos</div>
+        
+        <h2>📸 Photo Gallery</h2>
+        <div id="gallery"></div>
+    </div>
+
+    <script>
+        function capturePhoto() {
+            console.log("Capture button clicked!");
+            document.getElementById('status').innerHTML = "⏳ Capturing photo...";
+            
+            fetch('/capture')
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Network error: ' + response.status);
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    console.log("Server response:", data);
+                    if (data.success) {
+                        document.getElementById('status').innerHTML = 
+                            "✅ Photo captured! Total: " + data.count;
+                        
+                        // Add to gallery
+                        const gallery = document.getElementById('gallery');
+                        const img = document.createElement('img');
+                        img.src = data.filename + '?t=' + new Date().getTime();
+                        img.alt = 'Captured Photo';
+                        gallery.appendChild(img);
+                    } else {
+                        document.getElementById('status').innerHTML = 
+                            "❌ Failed: " + (data.error || 'Unknown error');
+                    }
+                })
+                .catch(error => {
+                    console.error("Fetch error:", error);
+                    document.getElementById('status').innerHTML = 
+                        "❌ Error: " + error.message;
+                });
+        }
+        
+        // Test if JavaScript is working
+        console.log("SmileCaptureAI Web loaded successfully!");
+        document.getElementById('status').innerHTML = 
+            "✅ Loaded! Click 'CAPTURE PHOTO' to start";
+    </script>
+</body>
+</html>
+
