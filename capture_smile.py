@@ -34,7 +34,7 @@ def draw_header_bar(frame, photos_captured):
     
     # Draw app title
     title = "CAPTURE SMILE AI"
-    cv2.putText(frame, title, (20, 45), cv2.FONT_HERSHEY_BOLD, 1.2, (255, 255, 255), 3)
+   cv2.putText(frame, title, (20, 45), cv2.FONT_HERSHEY_DUPLEX, 1.2, (255, 255, 255), 3)
     cv2.putText(frame, title, (20, 45), cv2.FONT_HERSHEY_BOLD, 1.2, (100, 200, 255), 2)
     
     # Draw photo counter on the right
