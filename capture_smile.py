@@ -1,11 +1,105 @@
 """
 Capture Smile AI - Automatic Smile Detection and Photo Capture
-A beginner-friendly Python application using OpenCV for real-time smile detection
+A beautiful, modern application with attractive UI/UX for real-time smile detection
 """
 
 import cv2
 import os
+import numpy as np
 from datetime import datetime
+
+
+def draw_header_bar(frame, photos_captured):
+    """
+    Draw a modern header bar with app title and photo counter.
+    
+    Args:
+        frame: The video frame to draw on
+        photos_captured: Number of photos captured so far
+    """
+    height, width = frame.shape[:2]
+    
+    # Create gradient background for header (dark blue to lighter blue)
+    header_height = 80
+    overlay = frame.copy()
+    
+    # Draw gradient header
+    for i in range(header_height):
+        alpha = i / header_height
+        color_val = int(40 + (20 * alpha))
+        cv2.rectangle(overlay, (0, i), (width, i + 1), (color_val, color_val, 60), -1)
+    
+    # Blend overlay with frame
+    cv2.addWeighted(overlay, 0.8, frame, 0.2, 0, frame)
+    
+    # Draw app title
+    title = "CAPTURE SMILE AI"
+    cv2.putText(frame, title, (20, 45), cv2.FONT_HERSHEY_BOLD, 1.2, (255, 255, 255), 3)
+    cv2.putText(frame, title, (20, 45), cv2.FONT_HERSHEY_BOLD, 1.2, (100, 200, 255), 2)
+    
+    # Draw photo counter on the right
+    counter_text = f"Photos: {photos_captured}"
+    text_size = cv2.getTextSize(counter_text, cv2.FONT_HERSHEY_SIMPLEX, 0.8, 2)[0]
+    counter_x = width - text_size[0] - 20
+    cv2.putText(frame, counter_text, (counter_x, 45), cv2.FONT_HERSHEY_SIMPLEX, 0.8, (255, 255, 255), 2)
+
+
+def draw_footer_bar(frame, status_text):
+    """
+    Draw a modern footer bar with status and instructions.
+    
+    Args:
+        frame: The video frame to draw on
+        status_text: Current status message to display
+    """
+    height, width = frame.shape[:2]
+    footer_height = 70
+    footer_y = height - footer_height
+    
+    # Create gradient background for footer
+    overlay = frame.copy()
+    for i in range(footer_height):
+        alpha = i / footer_height
+        color_val = int(60 - (20 * alpha))
+        cv2.rectangle(overlay, (0, footer_y + i), (width, footer_y + i + 1), (color_val, color_val, 40), -1)
+    
+    # Blend overlay with frame
+    cv2.addWeighted(overlay, 0.8, frame, 0.2, 0, frame)
+    
+    # Draw status text (centered)
+    status_size = cv2.getTextSize(status_text, cv2.FONT_HERSHEY_SIMPLEX, 0.9, 2)[0]
+    status_x = (width - status_size[0]) // 2
+    cv2.putText(frame, status_text, (status_x, footer_y + 30), cv2.FONT_HERSHEY_SIMPLEX, 0.9, (100, 255, 100), 2)
+    
+    # Draw instruction text at bottom
+    instruction = "Press 'Q' to Quit  |  Smile to Capture"
+    inst_size = cv2.getTextSize(instruction, cv2.FONT_HERSHEY_SIMPLEX, 0.5, 1)[0]
+    inst_x = (width - inst_size[0]) // 2
+    cv2.putText(frame, instruction, (inst_x, footer_y + 55), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (200, 200, 200), 1)
+
+
+def draw_rounded_rectangle(frame, x, y, w, h, color, thickness=2, corner_radius=15):
+    """
+    Draw a rectangle with rounded corners for better aesthetics.
+    
+    Args:
+        frame: The video frame to draw on
+        x, y, w, h: Rectangle coordinates and dimensions
+        color: Color tuple (B, G, R)
+        thickness: Line thickness
+        corner_radius: Radius of rounded corners
+    """
+    # Draw the four sides
+    cv2.line(frame, (x + corner_radius, y), (x + w - corner_radius, y), color, thickness)
+    cv2.line(frame, (x + corner_radius, y + h), (x + w - corner_radius, y + h), color, thickness)
+    cv2.line(frame, (x, y + corner_radius), (x, y + h - corner_radius), color, thickness)
+    cv2.line(frame, (x + w, y + corner_radius), (x + w, y + h - corner_radius), color, thickness)
+    
+    # Draw the four corners
+    cv2.ellipse(frame, (x + corner_radius, y + corner_radius), (corner_radius, corner_radius), 180, 0, 90, color, thickness)
+    cv2.ellipse(frame, (x + w - corner_radius, y + corner_radius), (corner_radius, corner_radius), 270, 0, 90, color, thickness)
+    cv2.ellipse(frame, (x + corner_radius, y + h - corner_radius), (corner_radius, corner_radius), 90, 0, 90, color, thickness)
+    cv2.ellipse(frame, (x + w - corner_radius, y + h - corner_radius), (corner_radius, corner_radius), 0, 0, 90, color, thickness)
 
 
 def initialize_camera():
@@ -47,7 +141,7 @@ def load_classifiers():
 
 def detect_faces_and_smiles(frame, face_cascade, smile_cascade):
     """
-    Detect faces and smiles in the given frame.
+    Detect faces and smiles in the given frame with beautiful visual indicators.
     
     Args:
         frame: The video frame to analyze
@@ -70,8 +164,20 @@ def detect_faces_and_smiles(frame, face_cascade, smile_cascade):
     
     # Loop through each detected face
     for (x, y, w, h) in faces:
-        # Draw a green rectangle around the face
-        cv2.rectangle(frame, (x, y), (x + w, y + h), (0, 255, 0), 2)
+        # Draw a modern rounded rectangle around the face with glow effect
+        # Outer glow (cyan)
+        draw_rounded_rectangle(frame, x-2, y-2, w+4, h+4, (255, 200, 100), thickness=3, corner_radius=20)
+        # Inner border (bright cyan)
+        draw_rounded_rectangle(frame, x, y, w, h, (255, 255, 100), thickness=2, corner_radius=18)
+        
+        # Add "FACE DETECTED" label above the face
+        label = "FACE DETECTED"
+        label_size = cv2.getTextSize(label, cv2.FONT_HERSHEY_SIMPLEX, 0.5, 1)[0]
+        label_x = x + (w - label_size[0]) // 2
+        label_y = y - 10
+        if label_y > 20:
+            cv2.putText(frame, label, (label_x, label_y), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 2)
+            cv2.putText(frame, label, (label_x, label_y), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (100, 255, 255), 1)
         
         # Extract the region of interest (ROI) - the face area
         roi_gray = gray[y:y + h, x:x + w]
@@ -83,8 +189,21 @@ def detect_faces_and_smiles(frame, face_cascade, smile_cascade):
         
         # Loop through detected smiles
         for (sx, sy, sw, sh) in smiles:
-            # Draw a blue rectangle around the smile
-            cv2.rectangle(roi_color, (sx, sy), (sx + sw, sy + sh), (255, 0, 0), 2)
+            # Draw a stylish rectangle around the smile with double border
+            # Outer glow (pink)
+            cv2.rectangle(roi_color, (sx-2, sy-2), (sx + sw+2, sy + sh+2), (200, 100, 255), 3)
+            # Inner border (bright pink)
+            cv2.rectangle(roi_color, (sx, sy), (sx + sw, sy + sh), (255, 150, 255), 2)
+            
+            # Add smile icon indicator
+            smile_icon = "^_^"
+            icon_size = cv2.getTextSize(smile_icon, cv2.FONT_HERSHEY_SIMPLEX, 0.6, 2)[0]
+            icon_x = sx + (sw - icon_size[0]) // 2
+            icon_y = sy + sh + 20
+            if icon_y < h - 5:
+                cv2.putText(roi_color, smile_icon, (icon_x, icon_y), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255, 255, 255), 2)
+                cv2.putText(roi_color, smile_icon, (icon_x, icon_y), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255, 100, 255), 1)
+            
             smile_detected = True
     
     return faces, smile_detected
@@ -116,23 +235,34 @@ def save_photo(frame, photo_counter):
     return photo_counter + 1
 
 
-def display_countdown(frame, countdown_value):
+def display_countdown(frame, countdown_value, countdown_frames):
     """
-    Display a large countdown number on the frame (3, 2, 1).
+    Display an attractive animated countdown number on the frame (3, 2, 1).
     
     Args:
         frame: The video frame to draw on
         countdown_value: The countdown number to display (3, 2, or 1)
+        countdown_frames: Current frame count for pulse animation
     """
     if countdown_value > 0:
         # Get frame dimensions
         height, width = frame.shape[:2]
         
-        # Set text properties for large countdown
-        font = cv2.FONT_HERSHEY_SIMPLEX
-        font_scale = 5.0  # Very large font for countdown
-        color = (0, 255, 0)  # Green color
-        thickness = 10
+        # Create pulse effect (size changes based on frame count)
+        pulse = 1.0 + (0.3 * abs((countdown_frames % 20) - 10) / 10)
+        
+        # Set text properties for large countdown with pulse effect
+        font = cv2.FONT_HERSHEY_BOLD
+        font_scale = 8.0 * pulse  # Very large font with animation
+        thickness = int(15 * pulse)
+        
+        # Color changes based on countdown value
+        colors = {
+            3: (100, 255, 100),   # Green for 3
+            2: (100, 200, 255),   # Yellow for 2
+            1: (100, 100, 255)    # Red for 1
+        }
+        color = colors.get(countdown_value, (100, 255, 100))
         
         # Get text size to center it
         text = str(countdown_value)
@@ -140,14 +270,32 @@ def display_countdown(frame, countdown_value):
         text_x = (width - text_size[0]) // 2
         text_y = (height + text_size[1]) // 2
         
-        # Draw countdown with black outline for better visibility
-        cv2.putText(frame, text, (text_x, text_y), font, font_scale, (0, 0, 0), thickness + 4)
+        # Draw glowing circle background
+        circle_radius = int(150 * pulse)
+        cv2.circle(frame, (width // 2, height // 2), circle_radius + 20, (50, 50, 50), -1)
+        cv2.circle(frame, (width // 2, height // 2), circle_radius + 15, color, 5)
+        cv2.circle(frame, (width // 2, height // 2), circle_radius + 10, (255, 255, 255), 2)
+        
+        # Draw countdown with shadow and glow effect
+        # Shadow
+        cv2.putText(frame, text, (text_x + 5, text_y + 5), font, font_scale, (0, 0, 0), thickness + 8)
+        # Outer glow
+        cv2.putText(frame, text, (text_x, text_y), font, font_scale, (255, 255, 255), thickness + 4)
+        # Main number
         cv2.putText(frame, text, (text_x, text_y), font, font_scale, color, thickness)
+        
+        # Add "Get Ready!" text below
+        ready_text = "GET READY!"
+        ready_size = cv2.getTextSize(ready_text, cv2.FONT_HERSHEY_BOLD, 1.2, 2)[0]
+        ready_x = (width - ready_size[0]) // 2
+        ready_y = text_y + 100
+        cv2.putText(frame, ready_text, (ready_x, ready_y), cv2.FONT_HERSHEY_BOLD, 1.2, (255, 255, 255), 3)
+        cv2.putText(frame, ready_text, (ready_x, ready_y), cv2.FONT_HERSHEY_BOLD, 1.2, (100, 255, 255), 2)
 
 
 def display_message(frame, message, duration_counter, max_duration=30):
     """
-    Display a message on the frame for a certain duration.
+    Display an attractive success message on the frame for a certain duration.
     
     Args:
         frame: The video frame to draw on
@@ -162,20 +310,46 @@ def display_message(frame, message, duration_counter, max_duration=30):
         # Get frame dimensions
         height, width = frame.shape[:2]
         
+        # Create fade-in fade-out effect
+        if duration_counter > max_duration - 10:
+            alpha = (max_duration - duration_counter) / 10
+        elif duration_counter < 10:
+            alpha = duration_counter / 10
+        else:
+            alpha = 1.0
+        
         # Set text properties
-        font = cv2.FONT_HERSHEY_SIMPLEX
-        font_scale = 1.5
-        color = (0, 255, 255)  # Yellow color
-        thickness = 3
+        font = cv2.FONT_HERSHEY_BOLD
+        font_scale = 2.0
+        thickness = 4
         
         # Get text size to center it
         text_size = cv2.getTextSize(message, font, font_scale, thickness)[0]
         text_x = (width - text_size[0]) // 2
-        text_y = 50
+        text_y = 150
         
-        # Draw text with black outline for better visibility
-        cv2.putText(frame, message, (text_x, text_y), font, font_scale, (0, 0, 0), thickness + 2)
-        cv2.putText(frame, message, (text_x, text_y), font, font_scale, color, thickness)
+        # Draw background box with transparency
+        padding = 20
+        box_x1 = text_x - padding
+        box_y1 = text_y - text_size[1] - padding
+        box_x2 = text_x + text_size[0] + padding
+        box_y2 = text_y + padding
+        
+        overlay = frame.copy()
+        cv2.rectangle(overlay, (box_x1, box_y1), (box_x2, box_y2), (50, 200, 50), -1)
+        cv2.rectangle(overlay, (box_x1, box_y1), (box_x2, box_y2), (100, 255, 100), 3)
+        cv2.addWeighted(overlay, 0.7 * alpha, frame, 1 - (0.7 * alpha), 0, frame)
+        
+        # Draw checkmark icon
+        checkmark = "✓"
+        check_size = cv2.getTextSize(checkmark, font, 2.0, 4)[0]
+        check_x = text_x - check_size[0] - 30
+        cv2.putText(frame, checkmark, (check_x, text_y), font, 2.0, (100, 255, 100), 6)
+        
+        # Draw text with shadow and glow effect
+        cv2.putText(frame, message, (text_x + 2, text_y + 2), font, font_scale, (0, 0, 0), thickness + 2)
+        cv2.putText(frame, message, (text_x, text_y), font, font_scale, (255, 255, 255), thickness)
+        cv2.putText(frame, message, (text_x, text_y), font, font_scale, (100, 255, 100), thickness - 1)
         
         return duration_counter - 1
     
@@ -255,8 +429,8 @@ def main():
         
         # Handle countdown logic
         if countdown_timer > 0:
-            # Display the current countdown number
-            display_countdown(frame, countdown_timer)
+            # Display the current countdown number with animation
+            display_countdown(frame, countdown_timer, countdown_frames)
             
             # Increment frame counter
             countdown_frames += 1
@@ -274,16 +448,27 @@ def main():
         if smile_cooldown > 0:
             smile_cooldown -= 1
         
-        # Display "Smile detected!" message if active (only when not counting down)
+        # Display "Photo Captured!" message if active (only when not counting down)
         if countdown_timer == 0:
-            message_duration = display_message(frame, "Smile detected!", message_duration)
+            message_duration = display_message(frame, "Photo Captured!", message_duration)
         
-        # Add instructions text at the bottom of the frame
-        cv2.putText(frame, "Press 'q' to quit", (10, frame.shape[0] - 10),
-                   cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255, 255, 255), 1)
+        # Determine current status for footer
+        if countdown_timer > 0:
+            status_text = f"📸 COUNTDOWN: {countdown_timer}"
+        elif len(faces) > 0:
+            if smile_detected:
+                status_text = "😊 SMILE DETECTED - Keep Smiling!"
+            else:
+                status_text = "😐 Face Detected - SMILE to Capture!"
+        else:
+            status_text = "👤 Looking for Faces..."
         
-        # Display the frame in a window
-        cv2.imshow('Capture Smile AI - Live Feed', frame)
+        # Draw the beautiful UI elements
+        draw_header_bar(frame, photo_counter - 1)
+        draw_footer_bar(frame, status_text)
+        
+        # Display the frame in a window with custom name
+        cv2.imshow('Capture Smile AI - Professional Edition', frame)
         
         # Wait for 1ms and check if 'q' key is pressed
         if cv2.waitKey(1) & 0xFF == ord('q'):
